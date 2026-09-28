@@ -1,52 +1,103 @@
-# support-agent-rag
+# Support Agent RAG
 
-Stage 1: reproducible project foundation for a support-agent RAG service.
+Backend-проект для AI-support агента интернет-магазина TechShop.
 
-## Scope of stage 1
+Агент будет отвечать по базе знаний, получать информацию о заказах и выполнять рискованные действия только после подтверждения оператора.
 
-Stage 0 established the Python package, lockfile, quality checks, CI, and a smoke test. This stage adds the first executable service boundary: an HTTP health endpoint.
+> Все данные в проекте синтетические. Реальные клиентские данные и реальные платёжные интеграции не используются.
 
-Included:
-- installable Python package;
-- FastAPI application factory;
-- `/health` endpoint;
-- API smoke test;
-- reproducible dependency lockfile;
-- CI quality gate.
+## Status
 
-Explicitly postponed:
-- PostgreSQL and pgvector;
-- Alembic migrations;
-- synthetic shop data;
-- mock shop operations;
-- document ingestion and chunking;
-- embeddings and vector database;
-- LLM provider integration;
-- support-channel adapters;
-- authentication, persistence, and production deployment.
+| Stage | Status | Result |
+|---|---|---|
+| 0. Foundation | Done | Python package, `uv.lock`, Ruff, tests, CI |
+| 1. Infrastructure and mock shop | Done | FastAPI, mock shop, auth boundary, PostgreSQL/pgvector Compose schema |
+| 2. Persistence and seed data | In progress | Initial SQL schema and deterministic synthetic data generator |
+| 3. RAG | Planned | Knowledge base, chunking, embeddings, retrieval |
+| 4. Tools and policy | Planned | Typed tools, ownership and business rules |
+| 5. LangGraph workflow | Planned | Routing, memory, escalation, human approval |
 
-The health endpoint is intentionally small: it proves that the service can start and answer an HTTP request before external infrastructure and RAG components are introduced.
+## Quick start
 
-## Local development
+Requirements: Python 3.12+, `uv`. Docker Desktop is required for PostgreSQL.
 
 ```bash
 uv sync --locked
+uv run pytest
 uv run ruff check .
 uv run ruff format --check .
-uv run pytest
 ```
 
-## Stage 1 acceptance criteria
+Run the API:
 
-- A clean checkout installs with `uv sync --locked`.
-- `GET /health` returns HTTP 200 and the stable service status JSON.
-- `docker compose up -d` starts PostgreSQL with pgvector and creates the initial tables.
-- The mock shop returns an owned order and rejects cross-customer access.
-- Write operations require the operator role.
-- Lint, formatting check, and tests pass.
-- CI runs the same commands.
-- No secrets or provider-specific code are required.
+```bash
+uv run uvicorn support_agent_rag:app --reload
+```
 
-## Next stage
+Then check:
 
-Stage 2 should add Alembic-managed migrations, a deterministic seed generator, and a database-backed shop repository. RAG and LLM integration remain later stages.
+```bash
+curl http://127.0.0.1:8000/health
+curl -H 'Authorization: Bearer client-token-alice' \\
+  http://127.0.0.1:8000/shop/orders/order-1001
+```
+
+Start local PostgreSQL with pgvector:
+
+```bash
+docker compose up -d
+```
+
+If Docker Desktop is not running, the API tests still work because the current mock shop uses an injected in-memory repository.
+
+## Project decisions
+
+### Why the project starts with a mock shop
+
+The LLM is not needed to test ownership checks, order lookup, role permissions, or controlled errors. These rules are deterministic and must be tested independently of model behavior.
+
+### Why authorization is in code
+
+A prompt can be ignored or manipulated. The service layer receives the customer context and checks ownership before returning order data. The model can propose an action, but it cannot grant itself access.
+
+### Why synthetic data
+
+This is a portfolio project. Synthetic data makes local development reproducible and avoids exposing PII.
+
+### Why RAG comes later
+
+First we need stable domain operations and persistence boundaries. Otherwise it becomes difficult to distinguish a retrieval problem from an application or authorization problem.
+
+## Implemented scope
+
+- FastAPI application and `/health` endpoint;
+- deterministic in-memory mock shop;
+- client/operator role boundary;
+- ownership check for order reads;
+- operator-only return request;
+- PostgreSQL + pgvector Compose definition;
+- initial SQL tables;
+- deterministic synthetic dataset generator.
+
+Not implemented yet:
+
+- Alembic migration workflow;
+- database-backed repository;
+- real authentication;
+- LLM, embeddings, LangChain or LangGraph;
+- production payment/logistics integrations.
+
+## Verification
+
+```text
+8 passed
+ruff check: passed
+ruff format --check: passed
+docker compose config --quiet: passed
+```
+
+One non-blocking warning comes from the current FastAPI/Starlette TestClient and its future HTTPX integration.
+
+## License
+
+MIT
