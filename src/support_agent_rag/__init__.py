@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import Engine
 
+from .db.repository import DatabaseShop
 from .mock_shop.service import InMemoryShop
 
 TOKENS = {
@@ -18,9 +20,16 @@ def health() -> dict[str, str]:
     return {"service": "support-agent-rag", "status": "ok"}
 
 
-def create_app(shop: InMemoryShop | None = None) -> FastAPI:
-    """Build the service with an injectable shop dependency."""
-    shop = shop or InMemoryShop.seeded()
+def create_app(
+    shop: InMemoryShop | None = None,
+    database_engine: Engine | None = None,
+) -> FastAPI:
+    """Build the service with an injectable in-memory or database shop."""
+    if shop is not None and database_engine is not None:
+        raise ValueError("Choose either shop or database_engine")
+    shop = shop or (
+        DatabaseShop(database_engine) if database_engine is not None else InMemoryShop.seeded()
+    )
     app = FastAPI(title="Support Agent RAG")
 
     @app.get("/health")

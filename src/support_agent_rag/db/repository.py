@@ -5,6 +5,25 @@ from ..seed.generator import SeedDataset
 from .models import Customer, Order, OrderItem, Product
 
 
+class DatabaseShop:
+    def __init__(self, engine) -> None:
+        self.engine = engine
+
+    def get_order(self, order_id: str, customer_id: str | None = None) -> Order | None:
+        with Session(self.engine) as session:
+            statement = select(Order).where(Order.id == order_id)
+            if customer_id is not None:
+                statement = statement.where(Order.customer_id == customer_id)
+            order = session.scalar(statement)
+            if order is None:
+                return None
+            session.expunge(order)
+            return order
+
+    def create_return_request(self, order_id: str, item_id: str, reason: str):
+        raise NotImplementedError("Database return requests are implemented in the actions stage")
+
+
 def seed_database(session: Session, dataset: SeedDataset) -> None:
     """Insert a dataset once, keeping repeated seed runs idempotent."""
     for customer in dataset.customers:
