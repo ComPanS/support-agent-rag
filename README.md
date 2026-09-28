@@ -40,10 +40,13 @@ uv run pytest
 
 - A clean checkout installs with `uv sync --locked`.
 - `GET /health` returns HTTP 200 and the stable service status JSON.
+- `docker compose up -d` starts PostgreSQL with pgvector and creates the initial tables.
+- The mock shop returns an owned order and rejects cross-customer access.
+- Write operations require the operator role.
 - Lint, formatting check, and tests pass.
 - CI runs the same commands.
 - No secrets or provider-specific code are required.
 
 ## Next stage
 
-Stage 2 should add PostgreSQL/pgvector, migrations, deterministic synthetic shop data, and read-only mock-shop operations. RAG and LLM integration remain later stages.
+Stage 2 should add Alembic-managed migrations, a deterministic seed generator, and a database-backed shop repository. RAG and LLM integration remain later stages.
