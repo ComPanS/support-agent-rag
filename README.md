@@ -17,7 +17,31 @@ Backend-проект для AI-support агента интернет-магаз�
 | 4. Tools and policy | Planned | Typed tools, ownership and business rules |
 | 5. LangGraph workflow | Planned | Routing, memory, escalation, human approval |
 
-## Quick start
+## Stage 2 persistence and seed data
+
+The persistence substage adds SQLAlchemy models, an idempotent repository seed operation, and a CLI that writes deterministic synthetic data into PostgreSQL.
+
+```bash
+uv run python -m support_agent_rag.seed.cli --customers 50 --products 100 --orders 500
+```
+
+The command uses `DATABASE_URL` from the environment. Start PostgreSQL first:
+
+```bash
+docker compose up -d
+export DATABASE_URL=postgresql+psycopg://support_agent:support_agent_dev@localhost:5432/support_agent
+```
+
+
+## Database migrations
+
+The schema is managed by Alembic:
+
+```bash
+export DATABASE_URL=postgresql+psycopg://support_agent:support_agent_dev@localhost:5432/support_agent
+uv run alembic upgrade head
+uv run python -m support_agent_rag.seed.cli
+```
 
 Requirements: Python 3.12+, `uv`. Docker Desktop is required for PostgreSQL.
 
