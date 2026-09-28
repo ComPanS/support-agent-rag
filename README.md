@@ -12,8 +12,8 @@ Backend-проект для AI-support агента интернет-магаз�
 |---|---|---|
 | 0. Foundation | Done | Python package, `uv.lock`, Ruff, tests, CI |
 | 1. Infrastructure and mock shop | Done | FastAPI, mock shop, auth boundary, PostgreSQL/pgvector Compose schema |
-| 2. Persistence and seed data | In progress | Initial SQL schema and deterministic synthetic data generator |
-| 3. RAG | Planned | Knowledge base, chunking, embeddings, retrieval |
+| 2. Persistence and seed data | Done | SQLAlchemy models, Alembic, database-backed reads, deterministic synthetic data |
+| 3. RAG | In progress | Markdown ingestion, section-aware chunks, deterministic retrieval, citations |
 | 4. Tools and policy | Planned | Typed tools, ownership and business rules |
 | 5. LangGraph workflow | Planned | Routing, memory, escalation, human approval |
 
