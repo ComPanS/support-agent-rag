@@ -13,11 +13,34 @@ Backend-проект для AI-support агента интернет-магаз�
 | 0. Foundation | Done | Python package, `uv.lock`, Ruff, tests, CI |
 | 1. Infrastructure and mock shop | Done | FastAPI, mock shop, auth boundary, PostgreSQL/pgvector Compose schema |
 | 2. Persistence and seed data | Done | SQLAlchemy models, Alembic, database-backed reads, deterministic synthetic data |
-| 3. RAG | In progress | Markdown ingestion, section-aware chunks, deterministic retrieval, citations |
+| 3. RAG | Done | Section-aware Markdown ingestion, lexical retrieval baseline, citations, refusal on empty context |
+| 3a. LLM generation | In progress | OpenAI-compatible generation; output/citation validation |
 | 4. Tools and policy | Planned | Typed tools, ownership and business rules |
 | 5. LangGraph workflow | Planned | Routing, memory, escalation, human approval |
 
-## Stage 2 persistence and seed data
+## Provider-compatible LLM generation
+
+The RAG baseline can call an OpenAI-compatible chat completion endpoint:
+
+```bash
+export OPENAI_API_KEY=your-key
+export OPENAI_BASE_URL=https://provider.example/v1  # optional for OpenAI-compatible hosts
+export LLM_MODEL=provider/model-name
+```
+
+```python
+from pathlib import Path
+from support_agent_rag.llm import OpenAICompatibleGenerator
+from support_agent_rag.rag.loader import load_knowledge_base
+
+kb = load_knowledge_base(Path("data/kb"))
+query = "Сколько дней даётся на возврат?"
+chunks = kb.search(query)
+answer = OpenAICompatibleGenerator.from_env().generate(query, chunks)
+```
+
+The generator is not called when retrieval is empty. Its output is accepted only when it is valid JSON, has a non-empty answer, and cites IDs that were actually supplied as evidence. This validates citation membership, not the factual entailment of every sentence; quality still needs evaluation.
+
 
 The persistence substage adds SQLAlchemy models, an idempotent repository seed operation, and a CLI that writes deterministic synthetic data into PostgreSQL.
 
@@ -101,7 +124,8 @@ First we need stable domain operations and persistence boundaries. Otherwise it 
 - operator-only return request;
 - PostgreSQL + pgvector Compose definition;
 - initial SQL tables;
-- deterministic synthetic dataset generator.
+- deterministic synthetic dataset generator;
+- provider-compatible LLM answer generation over retrieved evidence, with validated source IDs.
 
 Not implemented yet:
 
