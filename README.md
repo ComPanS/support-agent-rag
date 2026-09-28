@@ -13,12 +13,24 @@ Backend-проект для AI-support агента интернет-магаз�
 | 0. Foundation | Done | Python package, `uv.lock`, Ruff, tests, CI |
 | 1. Infrastructure and mock shop | Done | FastAPI, mock shop, auth boundary, PostgreSQL/pgvector Compose schema |
 | 2. Persistence and seed data | Done | SQLAlchemy models, Alembic, database-backed reads, deterministic synthetic data |
-| 3. RAG | Done | Section-aware Markdown ingestion, lexical retrieval baseline, citations, refusal on empty context |
-| 3a. LLM generation | In progress | OpenAI-compatible generation; output/citation validation |
+| 3. RAG | Done | Markdown ingestion, lexical baseline, citations, refusal on empty context |
+| 3a. Local semantic retrieval | Done | LM Studio embeddings and optional local LLM reranker |
 | 4. Tools and policy | Planned | Typed tools, ownership and business rules |
 | 5. LangGraph workflow | Planned | Routing, memory, escalation, human approval |
 
-## Provider-compatible LLM generation
+## Local embeddings and reranking
+
+LM Studio provides the local OpenAI-compatible endpoint. Load the models before running the local retrieval tests:
+
+```bash
+lms load text-embedding-qwen3-embedding-0.6b -y
+lms load qwen/qwen3.5-4b -y
+lms server start --port 1234
+uv run pytest -q tests/test_embeddings.py tests/test_local_retrieval.py
+```
+
+The embedding model creates vectors for policy chunks and questions. Cosine similarity returns relevant candidates and applies a configurable minimum score. The local chat model acts as an LLM reranker over those candidates; it cannot add evidence, only reorder it. Invalid rankings fall back to the embedding order.
+
 
 The RAG baseline can call an OpenAI-compatible chat completion endpoint:
 
